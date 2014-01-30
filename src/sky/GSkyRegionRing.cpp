@@ -418,8 +418,9 @@ std::string GSkyRegionRing::write(void) const
 
     // Optionally add region name
     if (m_name.length() > 0) {
-        result.append(" # text=");
+        result.append(" # text={");
         result.append(m_name);
+        result.append("}");
     }
 
     // Return string
