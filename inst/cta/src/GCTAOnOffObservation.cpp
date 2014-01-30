@@ -484,8 +484,8 @@ void GCTAOnOffObservation::fill(const GCTAObservation& obs)
 	// Set exposure times and compute alpha parameter 
 	// (default just based on numbers of regions, eventually should include ratio of effective areas)
 	m_ontime=obs.livetime();
-	m_offtime=obs.livetime()*m_off_regions.size();
-	m_alpha=m_ontime/m_offtime;
+	m_offtime=obs.livetime();
+	m_alpha=1.0/m_off_regions.size();
 	
 	// Return
 	return;
@@ -709,10 +709,7 @@ double GCTAOnOffObservation::model_on(const GModels&            models,
 					
 					    // If this model component is a sky component
 					    if (dynamic_cast<const GModelSky*>(mptr) != NULL) {
-																				
-							// For debug (to be removed later)
-							std::cout << "Obs " << m_name << " model " << j << " is of sky type" << std::endl;
-							
+																											
 							// Set pointer to sky
 							const GModelSky* skyptr=dynamic_cast<const GModelSky*>(mptr);
 							
@@ -729,8 +726,6 @@ double GCTAOnOffObservation::model_on(const GModels&            models,
 								// Number of gamma events in model
 								// (Get flux over energy bin in ph/cm2/s and multiply by effective area and time)
 							    ngam += speskyptr->flux(emin,emax)*m_arf[ibin]*m_ontime;
-								// Debug
-								std::cout << "Updating number of gamma events..." << std::endl;
 								
 								// Gradients
 								// Evaluate model at current energy (also fills gradients)
@@ -739,8 +734,6 @@ double GCTAOnOffObservation::model_on(const GModels&            models,
 								for (int k = 0; k < speskyptr->size(); ++k)  {  
 									GModelPar sppar=(*speskyptr)[k];
 									if (sppar.is_free() && i_par < npars)  {
-										// Debug
-										std::cout << "Setting model gradient for parameter " << i_par << "/" << mod_grad->size() << std::endl;
 										(*mod_grad)[i_par]=sppar.gradient();
 										i_par++;
 									}
@@ -818,6 +811,7 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 		    const GEnergy emin=m_on_spec.ebounds().emin(ibin);
 		    const GEnergy emax=m_on_spec.ebounds().emax(ibin);
 		    const GEnergy emean=m_on_spec.ebounds().elogmean(ibin);
+			const double ewidth=m_on_spec.ebounds().ewidth(ibin).MeV();
 			
 		    // Loop over models 
 		    for (int j = 0; j < models.size(); ++j) {
@@ -863,8 +857,6 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 								// Number of gamma events in model
 								// (Get flux over energy bin in ph/cm2/s and multiply by effective area and time and solid angle)									
 								nbgd += spebgdptr->flux(emin,emax)*m_offtime*totsolidangle;
-								// Debug
-								std::cout << "Updating number of background events..." << std::endl;
 								
 								// Gradients
 								// Evaluate model at current energy (also fills gradients)
@@ -873,9 +865,7 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 								for (int k = 0; k < spebgdptr->size(); ++k)  {  
 									GModelPar sppar=(*spebgdptr)[k];
 									if (sppar.is_free() && i_par < npars)  {
-										// Debug
-										std::cout << "Setting model gradient for parameter " << i_par << "/" << mod_grad->size() << std::endl;
-										(*mod_grad)[i_par]=sppar.gradient();
+										(*mod_grad)[i_par]=sppar.gradient()*m_offtime*totsolidangle*ewidth;
 										i_par++;
 									}
 									
@@ -892,9 +882,6 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 						// if this model component is a background component
 						} else if (dynamic_cast<const GCTAModelRadialAcceptance*>(mptr) != NULL) {
 															
-							    // For debug (to be removed later)
-							    std::cout << "Obs " << m_name << " model " << j << " is of background type" << std::endl;
-							
 							    // Set pointer to background
 								const GCTAModelRadialAcceptance* bgdptr=dynamic_cast<const GCTAModelRadialAcceptance*>(mptr);
 								
@@ -920,8 +907,6 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 									// Number of gamma events in model
 									// (Get flux over energy bin in ph/cm2/s and multiply by effective area and time and solid angle)									
 									nbgd += spebgdptr->flux(emin,emax)*m_offtime*totsolidangle;
-									// Debug
-									std::cout << "Updating number of background events..." << std::endl;
 								
 								    // Gradients
 									// Evaluate model at current energy (also fills gradients)
@@ -930,9 +915,7 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 									for (int k = 0; k < spebgdptr->size(); ++k)  {  
 										GModelPar sppar=(*spebgdptr)[k];
 										if (sppar.is_free() && i_par < npars)  {
-											// Debug
-											std::cout << "Setting model gradient for parameter " << i_par << "/" << mod_grad->size() << std::endl;
-											(*mod_grad)[i_par]=sppar.gradient();
+											(*mod_grad)[i_par]=sppar.gradient()*m_offtime*totsolidangle*ewidth;
 											i_par++;
 										}
 										
