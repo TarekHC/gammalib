@@ -56,7 +56,7 @@
 /***********************************************************************//**
  * @brief Void constructor
  ***************************************************************************/
-GSkyRegionRing::GSkyRegionRing(void)
+GSkyRegionRing::GSkyRegionRing(void) : GSkyRegion()
 {
     // Initialise members
     init_members();
@@ -72,7 +72,7 @@ GSkyRegionRing::GSkyRegionRing(void)
  * @param[in] centre Centre sky direction.
  * @param[in] radius Region radius [deg].
  ***************************************************************************/
-GSkyRegionRing::GSkyRegionRing(GSkyDir& centre, const double& radius1, const double& radius2)
+GSkyRegionRing::GSkyRegionRing(GSkyDir& centre, const double& radius1, const double& radius2) : GSkyRegion()
 {
     // Initialise members
 	init_members();
@@ -99,7 +99,7 @@ GSkyRegionRing::GSkyRegionRing(GSkyDir& centre, const double& radius1, const dou
  * @param[in] radius2 outer Region radius [deg].
  ***************************************************************************/
 GSkyRegionRing::GSkyRegionRing(const double& ra, const double& dec,
-                                   const double& radius1, const double& radius2)
+                                   const double& radius1, const double& radius2)  : GSkyRegion()
 {
     // Initialise members
 	init_members();
@@ -124,7 +124,7 @@ GSkyRegionRing::GSkyRegionRing(const double& ra, const double& dec,
  *
  * Constructs region from a DS9 region file line.
  ***************************************************************************/
-GSkyRegionRing::GSkyRegionRing(const std::string& line)
+GSkyRegionRing::GSkyRegionRing(const std::string& line) : GSkyRegion()
 {
 	 // Initialise members
 	 init_members();
@@ -140,9 +140,9 @@ GSkyRegionRing::GSkyRegionRing(const std::string& line)
 /***********************************************************************//**
  * @brief Copy constructor
  *
- * @param[in] region ring sky region.
+ * @param[in] ring sky region.
  ***************************************************************************/
-GSkyRegionRing::GSkyRegionRing(const GSkyRegionRing& region)
+GSkyRegionRing::GSkyRegionRing(const GSkyRegionRing& region) : GSkyRegion(region)
 {
     // Initialise members
     init_members();
@@ -177,15 +177,18 @@ GSkyRegionRing::~GSkyRegionRing(void)
 /***********************************************************************//**
  * @brief Assignment operator
  *
- * @param[in] Ring Circular sky region.
- * @return Circular sky region.
+ * @param[in] Annular sky region.
+ * @return Annular sky region.
  ***************************************************************************/
 GSkyRegionRing& GSkyRegionRing::operator=(const GSkyRegionRing& Ring)
 {
     // Execute only if object is not identical
     if (this != &Ring) {
-
-        // Free members
+		
+		// Copy base class members
+        this->GSkyRegion::operator=(Ring);
+        
+		// Free members
         free_members();
 
         // Initialise private members for clean destruction
@@ -226,19 +229,19 @@ void GSkyRegionRing::clear(void)
 
 
 /***********************************************************************//**
- * @brief Clone circular sky region
+ * @brief Clone annular sky region
  *
- * @return Deep copy to circular sky region.
+ * @return Deep copy to annular sky region.
  ***************************************************************************/
 GSkyRegionRing* GSkyRegionRing::clone(void) const
 {
-    // Clone circular sky region
+    // Clone annular sky region
     return new GSkyRegionRing(*this);
 }
 
 
 /***********************************************************************//**
- * @brief Set radius of circular region
+ * @brief Set radii of annular region
  *
  * @param[in] radius1 inner region Radius [deg].
  * @param[in] radius2 outer region Radius [deg]. 
@@ -246,7 +249,7 @@ GSkyRegionRing* GSkyRegionRing::clone(void) const
  * @exception GException::invalid_argument
  *            Radius value is less than 0.
  *
- * Sets the radius of the circular sky region. Only non-negative radii are
+ * Sets the radius of the annular sky region. Only non-negative radii are
  * allowed.
  ***************************************************************************/
 void GSkyRegionRing::radius1(const double& radius1)
@@ -497,7 +500,7 @@ bool GSkyRegionRing::contains(const GSkyRegion& reg) const
 	// If other region is Ring use a simple way to calculate
 	if (reg.type() == "Ring") {
 
-		// Create circular region from reg
+		// Create annular region from reg
 		const GSkyRegionRing* regring =
               dynamic_cast<const GSkyRegionRing*>(&reg);
 
@@ -543,7 +546,7 @@ bool GSkyRegionRing::overlaps(const GSkyRegion& reg) const
 	// If other region is Ring use a simple way to calculate
 	if (reg.type() == "Ring") {
 
-		// Create circular region from reg
+		// Create annular region from reg
 		const GSkyRegionRing* regring =
               dynamic_cast<const GSkyRegionRing*>(&reg);
 
@@ -569,14 +572,14 @@ bool GSkyRegionRing::overlaps(const GSkyRegion& reg) const
 	// If other region is Circle use a simple way to calculate
 	else if (reg.type() == "Circle") {
 
-		// Create circular region from reg
+		// Create annular region from reg
 		const GSkyRegionCircle* regcirc =
               dynamic_cast<const GSkyRegionCircle*>(&reg);
 
 		// Calculate angular distance between the centres
 		double ang_dist = m_centre.dist_deg(regcirc->centre());
 
-		// Check if the distance is smaller than the sum of the outer radii and the circular radii
+		// Check if the distance is smaller than the sum of the outer radii and the annular radii
 		if (ang_dist <= (m_radius2 + regcirc->radius())) {
 			overlap = true;
 		}
@@ -659,7 +662,7 @@ void GSkyRegionRing::compute_solid_angle(void)
 	double radius2_rad = m_radius2 * gammalib::deg2rad;
 
 	// Compute solid angle
-	m_solid = gammalib::twopi * (1.0 - std::cos(radius2_rad)) - gammalib::twopi * (1.0 - std::cos(radius1_rad));
+	m_solid = gammalib::twopi * (std::cos(radius1_rad) - std::cos(radius2_rad));
 
     // Return
     return;

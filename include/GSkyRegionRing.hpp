@@ -21,7 +21,7 @@
 /**
  * @file GSkyRegionRing.hpp
  * @brief Ring sky region class interface definition
- * @author Maria Krause, Anneli Schulz
+ * @author Maria Krause and Anneli Schulz
  */
 
 #ifndef GSKYREGIONRING_HPP
@@ -38,19 +38,9 @@
 /***********************************************************************//**
  * @class GSkyRegionRing
  *
- * @brief Interface for the Ring sky region class
+ * @brief Interface for the ring sky region class
  *
- * This class provides an implementation for a circular sky region. The sky
- * region is defined by an array of parameters, the meaning of which is
- * specific to the derived class where the region type or shape is defined.
- *
- * The class holds several properties such as solid angle subtended by the
- * region and computed through internal method compute_solid().
- *
- * To be clarified:
- * - Do we want a member relating the region to an observation run ?
- * - Constructor and read/write using XML may not be needed if we use DS9
- *   region file format ?
+ * This class provides an implementation for a ring sky region. 
  *
  ***************************************************************************/
 class GSkyRegionRing : public GSkyRegion {
@@ -122,7 +112,7 @@ const double& GSkyRegionRing::radius2(void) const
 
 
 /***********************************************************************//**
- * @brief Return circular region centre
+ * @brief Return annular region centre
  *
  * @return Region centre.
  *
@@ -136,11 +126,11 @@ const GSkyDir& GSkyRegionRing::centre(void) const
 
 
 /***********************************************************************//**
- * @brief Set circular region centre
+ * @brief Set annular region centre
  *
  * @param[in] dir Region centre.
  *
- * Sets the centre of the circular region to the specified sky direction.
+ * Sets the centre of the annular region to the specified sky direction.
  ***************************************************************************/
 inline
 void GSkyRegionRing::centre(const GSkyDir& dir)
@@ -154,12 +144,12 @@ void GSkyRegionRing::centre(const GSkyDir& dir)
 
 
 /***********************************************************************//**
- * @brief Set circular region centre Right Ascension and Declincation
+ * @brief Set annular region centre Right Ascension and Declincation
  *
  * @param[in] ra Right Ascension [deg].
  * @param[in] dec Declination [deg].
  *
- * Sets the centre of the circular region to the specified Right Ascension
+ * Sets the centre of the annular region to the specified Right Ascension
  * and Declination.
  ***************************************************************************/
 inline
@@ -174,7 +164,7 @@ void GSkyRegionRing::centre(const double& ra, const double& dec)
 
 
 /***********************************************************************//**
- * @brief Return circular region centre Right Ascension
+ * @brief Return annular region centre Right Ascension
  *
  * @return Region centre Right Ascension [deg].
  *
@@ -188,7 +178,7 @@ double GSkyRegionRing::ra(void) const
 
 
 /***********************************************************************//**
- * @brief Return circular region centre Declination
+ * @brief Return annular region centre Declination
  *
  * @return Region centre Declination [deg].
  *
@@ -200,4 +190,4 @@ double GSkyRegionRing::dec(void) const
     return (m_centre.dec_deg());
 }
 
-#endif /* GSKYREGIONRing_HPP */
+#endif /* GSKYREGIONRING_HPP */

@@ -40,17 +40,7 @@
  *
  * @brief Interface for the circular sky region class
  *
- * This class provides an implementation for a circular sky region. The sky
- * region is defined by an array of parameters, the meaning of which is
- * specific to the derived class where the region type or shape is defined.
- *
- * The class holds several properties such as solid angle subtended by the
- * region and computed through internal method compute_solid().
- *
- * To be clarified:
- * - Do we want a member relating the region to an observation run ?
- * - Constructor and read/write using XML may not be needed if we use DS9
- *   region file format ?
+ * This class provides an implementation for a circular sky region. 
  *
  ***************************************************************************/
 class GSkyRegionCircle : public GSkyRegion {
