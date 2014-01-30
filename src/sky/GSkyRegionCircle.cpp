@@ -55,7 +55,7 @@
 /***********************************************************************//**
  * @brief Void constructor
  ***************************************************************************/
-GSkyRegionCircle::GSkyRegionCircle(void)
+ GSkyRegionCircle::GSkyRegionCircle(void) : GSkyRegion()
 {
     // Initialise members
     init_members();
@@ -71,7 +71,7 @@ GSkyRegionCircle::GSkyRegionCircle(void)
  * @param[in] centre Centre sky direction.
  * @param[in] radius Region radius [deg].
  ***************************************************************************/
-GSkyRegionCircle::GSkyRegionCircle(GSkyDir& centre, const double& radius)
+GSkyRegionCircle::GSkyRegionCircle(GSkyDir& centre, const double& radius) : GSkyRegion()
 {
     // Initialise members
 	init_members();
@@ -96,7 +96,7 @@ GSkyRegionCircle::GSkyRegionCircle(GSkyDir& centre, const double& radius)
  * @param[in] radius Region radius [deg].
  ***************************************************************************/
 GSkyRegionCircle::GSkyRegionCircle(const double& ra, const double& dec,
-                                   const double& radius)
+                                   const double& radius) : GSkyRegion()
 {
     // Initialise members
 	init_members();
@@ -120,7 +120,7 @@ GSkyRegionCircle::GSkyRegionCircle(const double& ra, const double& dec,
  *
  * Constructs region from a DS9 region file line.
  ***************************************************************************/
-GSkyRegionCircle::GSkyRegionCircle(const std::string& line)
+GSkyRegionCircle::GSkyRegionCircle(const std::string& line) : GSkyRegion()
 {
 	 // Initialise members
 	 init_members();
@@ -139,7 +139,7 @@ GSkyRegionCircle::GSkyRegionCircle(const std::string& line)
  *
  * @param[in] region Circular sky region.
  ***************************************************************************/
-GSkyRegionCircle::GSkyRegionCircle(const GSkyRegionCircle& region)
+GSkyRegionCircle::GSkyRegionCircle(const GSkyRegionCircle& region) : GSkyRegion(region)
 {
     // Initialise members
     init_members();
@@ -181,6 +181,9 @@ GSkyRegionCircle& GSkyRegionCircle::operator=(const GSkyRegionCircle& circle)
 {
     // Execute only if object is not identical
     if (this != &circle) {
+
+		// Copy base class members
+        this->GSkyRegion::operator=(circle);
 
         // Free members
         free_members();
