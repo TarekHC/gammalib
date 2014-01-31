@@ -691,6 +691,7 @@ double GCTAOnOffObservation::model_on(const GModels&            models,
 		    const GEnergy emin=m_on_spec.ebounds().emin(ibin);
 		    const GEnergy emax=m_on_spec.ebounds().emax(ibin);
 		    const GEnergy emean=m_on_spec.ebounds().elogmean(ibin);
+			const double ewidth=m_on_spec.ebounds().ewidth(ibin).MeV();
 				
 		    // Loop over models 
 		    for (int j = 0; j < models.size(); ++j) {
@@ -734,7 +735,7 @@ double GCTAOnOffObservation::model_on(const GModels&            models,
 								for (int k = 0; k < speskyptr->size(); ++k)  {  
 									GModelPar sppar=(*speskyptr)[k];
 									if (sppar.is_free() && i_par < npars)  {
-										(*mod_grad)[i_par]=sppar.gradient();
+										(*mod_grad)[i_par]=sppar.factor_gradient()*m_arf[ibin]*m_ontime*ewidth;
 										i_par++;
 									}
 									
@@ -865,7 +866,7 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 								for (int k = 0; k < spebgdptr->size(); ++k)  {  
 									GModelPar sppar=(*spebgdptr)[k];
 									if (sppar.is_free() && i_par < npars)  {
-										(*mod_grad)[i_par]=sppar.gradient()*m_offtime*totsolidangle*ewidth;
+										(*mod_grad)[i_par]=sppar.factor_gradient()*m_offtime*totsolidangle*ewidth;
 										i_par++;
 									}
 									
@@ -915,7 +916,7 @@ double GCTAOnOffObservation::model_off(const GModels&            models,
 									for (int k = 0; k < spebgdptr->size(); ++k)  {  
 										GModelPar sppar=(*spebgdptr)[k];
 										if (sppar.is_free() && i_par < npars)  {
-											(*mod_grad)[i_par]=sppar.gradient()*m_offtime*totsolidangle*ewidth;
+											(*mod_grad)[i_par]=sppar.factor_gradient()*m_offtime*totsolidangle*ewidth;
 											i_par++;
 										}
 										
@@ -1010,8 +1011,7 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 	GVector sky_grad(npars);
 	GVector bgd_grad(npars);
 	// Working arrays
-	double* values = new double[npars];
-	int*    inx    = new int[npars];
+	GVector colvar(npars);
 	
 	// Create time object (empty, just needed in some calls)
 	GTime time;
@@ -1044,9 +1044,16 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 		nbgd=model_off(models,pars,i,&bgd_grad);
 		ngam=model_on(models,pars,i,&sky_grad);
 		
-		// For debug (to be removed later)
-	    std::cout << "Obs " << m_name << " Bin " << i << " Non=" << non << " Noff=" << noff << " Ngam=" << ngam << " Nbgd=" << nbgd << std::endl;
-		  
+		// Debug: print gradient (to be removed later)
+	    /*
+		std::cout << "Obs " << m_name << " Bin " << i << " Non=" << non << " Noff=" << noff << " Ngam=" << ngam << " Nbgd=" << nbgd << std::endl;
+		for (int j = 0; j < npars; ++j) {
+		  	if (sky_grad[j] != 0.0 || bgd_grad[j] != 0.0)  { 
+			    std::cout << "  Gradient " << j << " " << sky_grad[j] << " " << bgd_grad[j] << " " << (pars[j])->name() << std::endl;
+			}
+		}
+		*/
+		
 		// Skip bin if model is too small (avoids -Inf or NaN gradients)
 		nonpred= ngam+m_alpha*nbgd;
 		if ((nbgd <= minmod) || (nonpred <= minmod)) {
@@ -1067,17 +1074,6 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 		sum_data  += non;
 		sum_model += nonpred;
 		#endif
-		
-	    // Create index array of non-zero derivatives and initialise working array
-		// (just needed in call to update hessian matrix)
-		int ndev = 0;
-		for (int j = 0; j < npars; ++j) {
-		     if ((sky_grad[j] != 0.0  && !gammalib::is_infinite(sky_grad[j])) || 
-				 (bgd_grad[j] != 0.0  && !gammalib::is_infinite(bgd_grad[j])))  {
-				  inx[ndev] = j;
-				  ndev++;
-			 }
-		}
 		  
 		// Fill derivatives
 		double fa=non/nonpred;
@@ -1100,21 +1096,22 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 				
 					// If spectral model for sky component is non-zero and non-infinite
 					if (sky_grad[k] != 0.0  && !gammalib::is_infinite(sky_grad[k])) {	
-					    values[k]=sky_grad[j]*sky_grad[k]*fb;
+					    colvar[k]=sky_grad[j]*sky_grad[k]*fb;
 					
 					// If spectral model for sky component is non-zero and non-infinite
 					} else if (bgd_grad[k] != 0.0  && !gammalib::is_infinite(bgd_grad[k])) {
-						values[k]=sky_grad[j]*bgd_grad[k]*fc;
+						colvar[k]=sky_grad[j]*bgd_grad[k]*fc;
 						
 					// ...else neither sky nor background
 					} else {
-					    values[k]=0.0;
+					    colvar[k]=0.0;
 					}
 					
-					// Update matrix
-					curvature->add_to_column(j, values, inx, ndev);
-					
 				}
+				
+				// Update matrix
+				curvature->add_to_column(j, colvar);
+				
 			
 			// If spectral model for sky component is non-zero and non-infinite
 			} else if (bgd_grad[j] != 0.0  && !gammalib::is_infinite(bgd_grad[j])) {
@@ -1127,27 +1124,38 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 					
 					// If spectral model for sky component is non-zero and non-infinite
 					if (sky_grad[k] != 0.0  && !gammalib::is_infinite(sky_grad[k])) {	
-					    values[k]=bgd_grad[j]*bgd_grad[k]*fc;
+					    colvar[k]=bgd_grad[j]*bgd_grad[k]*fc;
 						
 						// If spectral model for sky component is non-zero and non-infinite
 					} else if (bgd_grad[k] != 0.0  && !gammalib::is_infinite(bgd_grad[k])) {
-						values[k]=bgd_grad[j]*bgd_grad[k]*fd;
+						colvar[k]=bgd_grad[j]*bgd_grad[k]*fd;
 						
 						// ...else neither sky nor background
 					} else {
-					    values[k]=0.0;
+					    colvar[k]=0.0;
 					}
-					
-					// Update matrix
-					curvature->add_to_column(j, values, inx, ndev);
-					
+										
 				}
+				
+				// Update matrix
+				curvature->add_to_column(j, colvar);
 			
-			} 
+			}
 						
 		} // Looped over all parameters for derivatives computation
 			
 	  } // Looped over energy bins
+		
+	  // Debug: print curvature (to be removed later)
+	  /*
+	  for (int j = 0; j < npars; ++j) {
+		  for (int k = 0; k < npars; ++k) {
+	          if ((*curvature)(j,k) != 0.0)  { 
+		          std::cout << "  Curvature " << j << " " << k << " " << (*curvature)(j,k) << std::endl;
+		      }
+		  }
+	   }
+	   */
 		
 	// ... else parameter array is not of type GModel so raise exception	
 	} else {
@@ -1156,11 +1164,7 @@ double GCTAOnOffObservation::likelihood_poisson_onoff(const GModels&            
 		                 " (ID "+this->id()+").\n";
 		throw GException::invalid_value(G_POISSON_ONOFF,msg);
 	}
-	
-    // Free working array
-    if (values != NULL) delete [] values;
-	if (inx    != NULL) delete [] inx;
-	
+		
     // Dump statistics
     #if G_OPT_DEBUG
     std::cout << "Number of bins: " << n_bins << std::endl;
