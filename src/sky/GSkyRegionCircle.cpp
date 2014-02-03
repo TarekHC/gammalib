@@ -347,18 +347,20 @@ void GSkyRegionCircle::read(const std::string& line)
 	compute_solid_angle();
 
 	// Check if there is a given name for the region and set it
-	std::vector<std::string>comments = gammalib::split(comment, " ");
-	for (int i = 0; i < comments.size(); i++) {
-		if (gammalib::contains(comments[i], "text")) {
-			std::vector<std::string> attributes = gammalib::split(comments[i], "=");
-			if (attributes.size() < 2) {
-                std::string msg =
-                      "Invalid character sequence encountered in provided"
-                      " string \""+line+"\".\n"
-                      "An attribute of the type \"text=Name\" is expected.";
-				throw GException::invalid_value(G_READ, msg);
-			}
-			m_name = attributes[1];
+		std::vector<std::string>comments = gammalib::split(comment, " ");
+		for (int i = 0; i < comments.size(); i++) {
+			if (gammalib::contains(comments[i], "text")) {
+				std::vector<std::string> attributes = gammalib::split(comments[i], "=");
+				unsigned    pos_text          = attributes[1].find("{");
+				unsigned    length_text          = attributes[1].find("}") - pos_text;
+				if (attributes.size() < 2) {
+	                std::string msg =
+	                      "Invalid character sequence encountered in provided"
+	                      " string \""+line+"\".\n"
+	                      "An attribute of the type \"text=Name\" is expected.";
+					throw GException::invalid_value(G_READ, msg);
+				}
+				m_name = attributes[1].substr(pos_text+1, length_text-1);
 		}
 	}
 
