@@ -354,13 +354,49 @@ GSkyDir GModelSpatialDiffuseMap::mc(const GEnergy& energy,
     	// Convert sky map index to sky map pixel
     	GSkyPixel pixel = m_map.inx2pix(index);
 
-    	// If we have a 2D pixel then randomize pixel values and convert them
-        // into a sky direction
+    	// If we have a 2D pixel then randomize pixel values and convert
+        // them into a sky direction
         if (pixel.is_2D()) {
-            pixel.x(pixel.x() + ran.uniform() - 0.5);
-            pixel.y(pixel.y() + ran.uniform() - 0.5);
-            dir = m_map.pix2dir(pixel);
-        }
+
+            // Get the maximum pixel value of all neighbours. This
+            // will provide a maximum value for the rejection method.
+            double max = m_map(pixel);
+            for (int ix = -1; ix <= +1; ++ix) {
+                for (int iy = -1; iy <= +1; ++iy) {
+                    GSkyPixel neighbour(pixel.x()+ix, pixel.y()+iy);
+                    if (m_map.contains(neighbour)) {
+                        double value = m_map(neighbour);
+                        if (value > max) {
+                            max = value;
+                        }
+                    }
+                }
+            }
+
+            // Now use a rejection method to get sky direction
+            while (true) {
+
+                // Get a random sky pixel
+                GSkyPixel test(pixel.x() + ran.uniform() - 0.5,
+                               pixel.y() + ran.uniform() - 0.5);
+
+                // Derive sky direction
+                dir = m_map.pix2dir(pixel);
+
+                // Get map value at that sky position
+                double value = m_map(dir);
+
+                // Get uniform random number for rejection
+                double uniform = ran.uniform() * max;
+
+                // Exit loop if we're not larger than the map value
+                if (uniform <= value) {
+                    break;
+                }
+                
+            } // endwhile
+
+        } // endif: we had a 2D pixel
 
         // ... otherwise convert pixel into sky direction and randomize
         // position. We use here a kluge to compute the radius that contains
@@ -380,7 +416,6 @@ GSkyDir GModelSpatialDiffuseMap::mc(const GEnergy& energy,
                 double phi     = 360.0 * ran.uniform();
                 randomized_dir.rotate_deg(phi, theta);
                 randomized_index = m_map.dir2inx(randomized_dir);
-//std::cout << radius << " " << randomized_index << " " << index << " " << randomized_dir << std::endl;
             }
             dir = randomized_dir;
         }
