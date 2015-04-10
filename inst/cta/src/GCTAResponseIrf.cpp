@@ -3107,8 +3107,8 @@ double GCTAResponseIrf::nroi_diffuse(const GModelSky&    model,
     // Set number of iterations for Romberg integration.
     // These values have been determined after careful testing, see
     // https://cta-redmine.irap.omp.eu/issues/1248
-    static const int iter_rho = 9;
-    static const int iter_phi = 9;
+    static const int iter_rho = 7;
+    static const int iter_phi = 7;
 
     // Initialise Nroi value
     double nroi     = 0.0;
