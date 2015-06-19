@@ -3571,6 +3571,9 @@ double GCTAResponseIrf::npsf(const GSkyDir&      srcDir,
                              const GCTAPointing& pnt,
                              const GCTARoi&      roi) const
 {
+    // Integration precision
+    static const int iter = 6;
+
     // Declare result
     double value = 0.0;
 
@@ -3617,7 +3620,8 @@ double GCTAResponseIrf::npsf(const GSkyDir&      srcDir,
 
             // Setup integration
             GIntegral integral(&integrand);
-            integral.eps(1.0e-5);
+            integral.fixed_iter(iter);
+            //integral.eps(1.0e-5);
 
             // Radially integrate PSF. In case that the radial integration
             // region is small, we do the integration using a simple

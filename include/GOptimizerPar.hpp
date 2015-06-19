@@ -232,7 +232,7 @@ double GOptimizerPar::error(void) const
 inline
 double GOptimizerPar::gradient(void) const
 {
-    return (m_factor_gradient * m_scale);
+    return (m_factor_gradient / m_scale);
 }
 
 
